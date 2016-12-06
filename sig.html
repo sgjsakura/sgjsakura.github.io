@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<title>签名档应用程序</title>
+	<script src="//ajax.aspnetcdn.com/ajax/jQuery/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+
+	<div id="container" onclick="switchNextImage();">
+	</div>
+
+	<script>
+
+		var currentIndex = 0;
+		var inAnimation = false;
+
+		$.fn.animateRotate = function (mode, start, angle, duration, easing, complete) {
+			var args = $.speed(duration, easing, complete);
+			var step = args.step;
+			return this.each(function (i, e) {
+				args.complete = $.proxy(args.complete, e);
+				args.step = function (now) {
+					$.style(e, 'transform', 'rotate' + mode + '(' + now + 'deg)');
+					if (step) {
+						return step.apply(e, arguments);
+					} else {
+						return null;
+					}
+				};
+
+				$({ deg: start }).animate({ deg: angle }, args);
+			});
+		};
+
+		$(function () {
+			loadImages();
+		});
+
+		// 加载图片
+		function loadImages() {
+
+			// 检索图片列表
+			var imageListUri = /^\#(.*)$/gi.exec(window.location.hash)[1];
+
+			// 错误处理
+			if (imageListUri === null || imageListUri === '') {
+				showError();
+				return;
+			}
+
+			imageListUri = decodeURIComponent(imageListUri);
+
+
+			$.get(imageListUri, handleImageList, 'text');
+		}
+
+		// 初始化状态
+		function intialize() {
+
+			// 初始化状态
+			$('img').hide().css('transform', 'rotateY(270deg)');
+			$('img').first().show().css('transform', 'rotateY(0)');
+		}
+
+		// 处理图像列表
+		function handleImageList(data) {
+			// 分割文件
+			var imageList = data.split(/\s+/i);
+
+			// 必须至少有两张图
+			if (imageList.length < 2) {
+				showError();
+				return;
+			}
+
+			$.each(imageList,
+				function (index, value) {
+
+					var ele = $.parseHTML('<img style="position: absolute; left: 0; top: 0;" />');
+					$(ele).prop('src', value);
+
+					$('#container').append(ele);
+				});
+
+
+			// 初始化状态
+			$('img').hide().css('transform', 'rotateY(270deg)');
+			$('img').first().show().css('transform', 'rotateY(0)');
+		}
+
+		function showError() {
+			
+		}
+
+
+		function switchNextImage() {
+
+			if (inAnimation) {
+				return;
+			}
+
+			inAnimation = true;
+
+			var oldImage = $('img').eq(currentIndex);
+			currentIndex = (currentIndex + 1) % $('img').length;
+			var newImage = $('img').eq(currentIndex);
+
+			$(oldImage).show();
+			$(newImage).hide();
+
+			$(oldImage).animateRotate('Y', 0, 90, 500, function () {
+				$(oldImage).hide();
+				$(newImage).show();
+				$(newImage).animateRotate('Y', 270, 360, 500, function () {
+					inAnimation = false;
+				});
+
+			});
+		}
+
+	</script>
+
+</body>
+</html>
